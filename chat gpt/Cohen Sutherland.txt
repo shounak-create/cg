@@ -1,0 +1,172 @@
+Implement Cohen Sutherland polygon clipping method to clip the polygon with respect the viewport and window. Use mouse click, keyboard interface
+
+
+#include <GL/glut.h>
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+const int INSIDE = 0; // 0000
+const int LEFT = 1;   // 0001
+const int RIGHT = 2;  // 0010
+const int BOTTOM = 4; // 0100
+const int TOP = 8;    // 1000
+
+vector<pair<int, int>> polygonPoints;
+bool drawingWindow = false;
+int winXmin, winYmin, winXmax, winYmax;
+bool clipDone = false;
+
+// Calculate region code
+int computeCode(int x, int y) {
+    int code = INSIDE;
+    if (x < winXmin) code |= LEFT;
+    else if (x > winXmax) code |= RIGHT;
+    if (y < winYmin) code |= BOTTOM;
+    else if (y > winYmax) code |= TOP;
+    return code;
+}
+
+// Cohen-Sutherland Line Clipping
+bool cohenSutherlandClip(int &x1, int &y1, int &x2, int &y2) {
+    int code1 = computeCode(x1, y1);
+    int code2 = computeCode(x2, y2);
+
+    bool accept = false;
+
+    while (true) {
+        if ((code1 == 0) && (code2 == 0)) {
+            accept = true;
+            break;
+        } else if (code1 & code2) {
+            break;
+        } else {
+            int codeOut = code1 ? code1 : code2;
+            int x, y;
+
+            if (codeOut & TOP) {
+                x = x1 + (x2 - x1) * (winYmax - y1) / (y2 - y1);
+                y = winYmax;
+            } else if (codeOut & BOTTOM) {
+                x = x1 + (x2 - x1) * (winYmin - y1) / (y2 - y1);
+                y = winYmin;
+            } else if (codeOut & RIGHT) {
+                y = y1 + (y2 - y1) * (winXmax - x1) / (x2 - x1);
+                x = winXmax;
+            } else if (codeOut & LEFT) {
+                y = y1 + (y2 - y1) * (winXmin - x1) / (x2 - x1);
+                x = winXmin;
+            }
+
+            if (codeOut == code1) {
+                x1 = x;
+                y1 = y;
+                code1 = computeCode(x1, y1);
+            } else {
+                x2 = x;
+                y2 = y;
+                code2 = computeCode(x2, y2);
+            }
+        }
+    }
+    return accept;
+}
+
+void drawPolygon(const vector<pair<int, int>> &points) {
+    glColor3f(0, 0, 1);
+    glBegin(GL_LINE_LOOP);
+    for (auto p : points)
+        glVertex2i(p.first, p.second);
+    glEnd();
+    glFlush();
+}
+
+void drawClippingWindow() {
+    glColor3f(1, 0, 0);
+    glBegin(GL_LINE_LOOP);
+    glVertex2i(winXmin, winYmin);
+    glVertex2i(winXmax, winYmin);
+    glVertex2i(winXmax, winYmax);
+    glVertex2i(winXmin, winYmax);
+    glEnd();
+    glFlush();
+}
+
+void drawClippedPolygon() {
+    glColor3f(0, 1, 0);
+    glBegin(GL_LINES);
+    for (int i = 0; i < polygonPoints.size(); i++) {
+        int x1 = polygonPoints[i].first;
+        int y1 = polygonPoints[i].second;
+        int x2 = polygonPoints[(i + 1) % polygonPoints.size()].first;
+        int y2 = polygonPoints[(i + 1) % polygonPoints.size()].second;
+
+        if (cohenSutherlandClip(x1, y1, x2, y2)) {
+            glVertex2i(x1, y1);
+            glVertex2i(x2, y2);
+        }
+    }
+    glEnd();
+    glFlush();
+}
+
+void mouse(int btn, int state, int x, int y) {
+    if (btn == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        y = 500 - y;  // OpenGL origin adjustment
+
+        if (!drawingWindow) {
+            polygonPoints.push_back({x, y});
+        } else {
+            if (winXmin == -1) {
+                winXmin = x;
+                winYmin = y;
+            } else {
+                winXmax = x;
+                winYmax = y;
+            }
+        }
+    }
+}
+
+void keyboard(unsigned char key, int x, int y) {
+    if (key == 'w') {
+        drawingWindow = true;
+        winXmin = winYmin = -1;
+    } else if (key == 'c') {
+        clipDone = true;
+        glutPostRedisplay();
+    }
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    if (!clipDone) {
+        drawPolygon(polygonPoints);
+        if (drawingWindow && winXmin != -1 && winXmax != -1)
+            drawClippingWindow();
+    } else {
+        drawClippingWindow();
+        drawClippedPolygon();
+    }
+}
+
+void init() {
+    glClearColor(1, 1, 1, 1);
+    gluOrtho2D(0, 500, 0, 500);
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(500, 500);
+    glutCreateWindow("Cohen Sutherland Polygon Clipping");
+
+    init();
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse);
+    glutKeyboardFunc(keyboard);
+    glutMainLoop();
+    return 0;
+}

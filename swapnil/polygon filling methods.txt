@@ -1,0 +1,93 @@
+4)Implement the following polygon filling methods : i) Flood fill / Seed fill using
+mouse click, keyboard interface and menu driven programming.
+Code:
+// FloodFill.cpp
+#include <iostream>
+#include <stack>
+#include <GL/glut.h>
+
+using namespace std;
+
+float R = 0, G = 0, B = 0;
+
+void init() {
+    glClearColor(1, 1, 1, 1); // White background
+    gluOrtho2D(0, 640, 0, 480);
+}
+
+// Iterative Flood Fill
+void floodFill(int x, int y, float* newCol, float* oldCol) {
+    stack<pair<int, int>> pixels;
+    pixels.push({x, y});
+
+    while (!pixels.empty()) {
+        auto [px, py] = pixels.top();
+        pixels.pop();
+
+        float pixel[3];
+        glReadPixels(px, py, 1, 1, GL_RGB, GL_FLOAT, pixel);
+
+        if (pixel[0] == oldCol[0] && pixel[1] == oldCol[1] && pixel[2] == oldCol[2]) {
+            glBegin(GL_POINTS);
+            glColor3f(newCol[0], newCol[1], newCol[2]);
+            glVertex2i(px, py);
+            glEnd();
+            glFlush();
+
+            pixels.push({px + 1, py});
+            pixels.push({px - 1, py});
+            pixels.push({px, py + 1});
+            pixels.push({px, py - 1});
+        }
+    }
+}
+
+void mouse(int btn, int state, int x, int y) {
+    y = 480 - y;
+    if (btn == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        float oldcol[] = {1, 1, 1};
+        float newcol[] = {R, G, B};
+        floodFill(x, y, newcol, oldcol);
+    }
+}
+
+void drawPolygon() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    glColor3f(1, 0, 0);
+    glBegin(GL_LINE_LOOP);
+    glVertex2i(150, 100);
+    glVertex2i(300, 300);
+    glVertex2i(450, 100);
+    glEnd();
+    glFlush();
+}
+
+void colorMenu(int value) {
+    switch (value) {
+        case 1: R = 0, G = 1, B = 0; break;
+        case 2: R = 1, G = 1, B = 0; break;
+        case 3: R = 1, G = 0, B = 1; break;
+    }
+    glutPostRedisplay();
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitWindowSize(640, 480);
+    glutInitWindowPosition(100, 100);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutCreateWindow("Flood Fill");
+
+    init();
+    glutDisplayFunc(drawPolygon);
+    glutMouseFunc(mouse);
+
+    glutCreateMenu(colorMenu);
+    glutAddMenuEntry("Green", 1);
+    glutAddMenuEntry("Yellow", 2);
+    glutAddMenuEntry("Pink", 3);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+    glutMainLoop();
+    return 0;
+}

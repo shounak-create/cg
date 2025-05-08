@@ -1,0 +1,64 @@
+12)Implement animation principles for any object.
+Code:
+#include <GL/glut.h>
+
+float x_position = -0.8f;  // Starting position of the square
+float speed = 0.005f;      // Speed of the square's movement
+
+// Function to update the position of the object
+void updatePosition(int value) {
+    // Move the square along the x-axis
+    x_position += speed;
+
+    // Reverse direction when reaching the boundary
+    if (x_position > 1.0f || x_position < -1.0f) {
+        speed = -speed;  // Reverse direction
+    }
+
+    // Redraw the scene
+    glutPostRedisplay();
+
+    // Register next update call
+    glutTimerFunc(16, updatePosition, 0);  // 60 frames per second
+}
+
+// Function to draw the square
+void drawSquare() {
+    glClear(GL_COLOR_BUFFER_BIT);  // Clear the screen
+
+    glLoadIdentity();  // Reset transformations
+    glTranslatef(x_position, 0.0f, 0.0f);  // Move the square along the x-axis
+
+    glBegin(GL_QUADS);
+    glColor3f(0.0f, 1.0f, 0.0f);  // Green color
+    glVertex2f(-0.1f, -0.1f);  // Bottom-left corner
+    glVertex2f(0.1f, -0.1f);   // Bottom-right corner
+    glVertex2f(0.1f, 0.1f);    // Top-right corner
+    glVertex2f(-0.1f, 0.1f);   // Top-left corner
+    glEnd();
+
+    glFlush();  // Render the object to the screen
+}
+
+// Initialize OpenGL settings
+void init() {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);  // Set background color to black
+    glMatrixMode(GL_PROJECTION);  // Set the projection matrix
+    gluOrtho2D(-1.0f, 1.0f, -1.0f, 1.0f);  // Set the 2D orthographic projection
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);  // Initialize GLUT
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);  // Single buffer and RGB color mode
+    glutInitWindowSize(500, 500);  // Set window size
+    glutCreateWindow("Animation Principles - Moving Square");  // Create window
+
+    init();  // Initialize OpenGL
+
+    glutDisplayFunc(drawSquare);  // Register display function
+    glutTimerFunc(25, updatePosition, 0);  // Set the animation update function with a timer
+
+    glutMainLoop();  // Enter the GLUT event processing loop
+
+    return 0;
+}

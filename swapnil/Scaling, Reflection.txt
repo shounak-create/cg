@@ -1,0 +1,119 @@
+8)Implement following 2D transformations on the object with respect to axis : i)
+Scaling ii) Reflection
+Code:
+#include <GL/glut.h>
+#include <cmath>
+#include <iostream>
+
+using namespace std;
+
+// Triangle vertices
+float triangle[3][2] = {
+    {-0.5, -0.5},
+    {0.5, -0.5},
+    {0.0, 0.5}
+};
+
+// Transformation variables
+float sx = 1.0, sy = 1.0;  // Scaling factors
+
+// Function to apply Scaling
+void scaleObject() {
+    cout << "Enter scaling factors (sx, sy): ";
+
+    if (!(cin >> sx >> sy)) {
+        cout << "Invalid input! Resetting scaling to (1,1)." << endl;
+        cin.clear();  // Clear error flag
+        cin.ignore(100, '\n');  // Ignore incorrect input
+        sx = sy = 1.0;
+    }
+
+    // Apply scaling to each vertex
+    for (int i = 0; i < 3; i++) {
+        triangle[i][0] *= sx;
+        triangle[i][1] *= sy;
+    }
+}
+
+// Function to apply Reflection
+void reflectObject() {
+    char axis;
+    cout << "Reflect across which axis? (x/y): ";
+
+    if (!(cin >> axis)) {
+        cout << "Invalid input! Resetting reflection." << endl;
+        cin.clear();
+        cin.ignore(100, '\n');
+        return;
+    }
+
+    if (axis == 'x' || axis == 'X') {
+        // Reflect across the X-axis
+        for (int i = 0; i < 3; i++) {
+            triangle[i][1] = -triangle[i][1];
+        }
+    }
+    else if (axis == 'y' || axis == 'Y') {
+        // Reflect across the Y-axis
+        for (int i = 0; i < 3; i++) {
+            triangle[i][0] = -triangle[i][0];
+        }
+    }
+    else {
+        cout << "Invalid axis! Use 'x' or 'y'." << endl;
+    }
+}
+
+// Function to draw the transformed object
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    glLoadIdentity();
+
+    glBegin(GL_TRIANGLES);
+    glColor3f(1.0, 0.5, 0.0);  // Orange color
+    for (int i = 0; i < 3; i++) {
+        glVertex2f(triangle[i][0], triangle[i][1]);
+    }
+    glEnd();
+
+    glFlush();
+}
+
+// Menu function for interaction
+void menu(int option) {
+    switch (option) {
+        case 1: scaleObject(); break;
+        case 2: reflectObject(); break;
+        case 3: exit(0);
+    }
+    glutPostRedisplay();
+}
+
+// Initialize OpenGL
+void init() {
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glMatrixMode(GL_PROJECTION);
+    gluOrtho2D(-1, 1, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+}
+
+// Main function
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(500, 500);
+    glutInitWindowPosition(100, 100);
+    glutCreateWindow("Manual 2D Transformations");
+
+    init();
+
+    glutCreateMenu(menu);
+    glutAddMenuEntry("1. Scale", 1);
+    glutAddMenuEntry("2. Reflect", 2);
+    glutAddMenuEntry("3. Exit", 3);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+    glutDisplayFunc(display);
+    glutMainLoop();
+    return 0;
+}

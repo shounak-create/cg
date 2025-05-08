@@ -1,0 +1,70 @@
+Generate fractal patterns using i) Koch Curve
+#include <GL/glut.h>
+#include <cmath>
+
+// Define point structure
+struct Point {
+    float x, y;
+};
+
+// Draw Koch Curve recursively
+void kochCurve(Point a, Point b, int depth) {
+    if (depth == 0) {
+        glBegin(GL_LINES);
+        glVertex2f(a.x, a.y);
+        glVertex2f(b.x, b.y);
+        glEnd();
+        return;
+    }
+
+    Point p1, p2, peak;
+
+    // Divide the line into three segments
+    p1.x = (2 * a.x + b.x) / 3;
+    p1.y = (2 * a.y + b.y) / 3;
+
+    p2.x = (a.x + 2 * b.x) / 3;
+    p2.y = (a.y + 2 * b.y) / 3;
+
+    // Calculate peak of equilateral triangle
+    float angle = M_PI / 3; // 60 degrees
+    peak.x = p1.x + (p2.x - p1.x) * cos(angle) - (p2.y - p1.y) * sin(angle);
+    peak.y = p1.y + (p2.x - p1.x) * sin(angle) + (p2.y - p1.y) * cos(angle);
+
+    // Recurse for each segment
+    kochCurve(a, p1, depth - 1);
+    kochCurve(p1, peak, depth - 1);
+    kochCurve(peak, p2, depth - 1);
+    kochCurve(p2, b, depth - 1);
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    glColor3f(0, 0, 1); // Blue color
+
+    Point a = {-0.8f, -0.4f};
+    Point b = {0.8f, -0.4f};
+
+    int depth = 4; // Adjust for more or fewer iterations
+    kochCurve(a, b, depth);
+
+    glFlush();
+}
+
+void init() {
+    glClearColor(1, 1, 1, 1);       // White background
+    gluOrtho2D(-1, 1, -1, 1);       // 2D coordinate system
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitWindowSize(600, 600);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutCreateWindow("Koch Curve Fractal");
+
+    init();
+    glutDisplayFunc(display);
+    glutMainLoop();
+    return 0;
+}
+

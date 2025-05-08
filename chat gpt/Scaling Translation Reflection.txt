@@ -1,0 +1,110 @@
+Implement following 2D transformations on the object with respect to axis : i) Scaling ii) Translation iii) Reflection
+
+#include <GL/glut.h>
+#include <iostream>
+#include <vector>
+using namespace std;
+
+vector<pair<int, int>> objectPoints;
+int transformType = 0;
+
+void drawAxes() {
+    glColor3f(0.6, 0.6, 0.6);
+    glBegin(GL_LINES);
+    glVertex2i(-500, 0); glVertex2i(500, 0); // X-axis
+    glVertex2i(0, -500); glVertex2i(0, 500); // Y-axis
+    glEnd();
+    glFlush();
+}
+
+void drawObject(const vector<pair<int, int>>& points, float r, float g, float b) {
+    glColor3f(r, g, b);
+    glBegin(GL_LINE_LOOP);
+    for (auto p : points)
+        glVertex2i(p.first, p.second);
+    glEnd();
+    glFlush();
+}
+
+void scaleObject(float sx, float sy) {
+    for (auto& p : objectPoints) {
+        p.first *= sx;
+        p.second *= sy;
+    }
+}
+
+void translateObject(int tx, int ty) {
+    for (auto& p : objectPoints) {
+        p.first += tx;
+        p.second += ty;
+    }
+}
+
+void reflectObject(char axis) {
+    for (auto& p : objectPoints) {
+        if (axis == 'x') p.second = -p.second;
+        else if (axis == 'y') p.first = -p.first;
+        else if (axis == 'o') {
+            p.first = -p.first;
+            p.second = -p.second;
+        }
+    }
+}
+
+void keyboard(unsigned char key, int x, int y) {
+    switch (key) {
+        case 's': // scale by 2x
+            scaleObject(2, 2);
+            break;
+        case 't': // translate by (50, 50)
+            translateObject(50, 50);
+            break;
+        case 'x': // reflect about X-axis
+            reflectObject('x');
+            break;
+        case 'y': // reflect about Y-axis
+            reflectObject('y');
+            break;
+        case 'o': // reflect about origin
+            reflectObject('o');
+            break;
+        case 'r': // reset
+            objectPoints.clear();
+            break;
+    }
+    glutPostRedisplay();
+}
+
+void mouse(int btn, int state, int x, int y) {
+    if (btn == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        int x_gl = x - 250;
+        int y_gl = 250 - y;
+        objectPoints.push_back({x_gl, y_gl});
+        glutPostRedisplay();
+    }
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawAxes();
+    drawObject(objectPoints, 0, 0, 1); // blue object
+}
+
+void init() {
+    glClearColor(1, 1, 1, 1);
+    gluOrtho2D(-250, 250, -250, 250);
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(500, 500);
+    glutCreateWindow("2D Transformations");
+
+    init();
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse);
+    glutKeyboardFunc(keyboard);
+    glutMainLoop();
+    return 0;
+}

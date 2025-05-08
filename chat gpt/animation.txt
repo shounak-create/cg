@@ -1,0 +1,77 @@
+Implement animation principles for any object
+	
+#include <GL/glut.h>
+#include <cmath>
+
+float ballY = -0.8f;     // Initial Y position
+float velocity = 0.02f;  // Vertical speed
+float gravity = -0.001f; // Simulates gravity
+float bounceFactor = 0.7f;
+bool goingUp = true;
+
+void drawBall(float yScale = 1.0f) {
+    glPushMatrix();
+    glTranslatef(0.0f, ballY, 0.0f);
+    glScalef(1.0f, yScale, 1.0f); // Squash & Stretch effect
+
+    glColor3f(1, 0, 0);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(0, 0);
+    for (int angle = 0; angle <= 360; angle++) {
+        float rad = angle * 3.14159f / 180;
+        glVertex2f(cos(rad) * 0.1f, sin(rad) * 0.1f);
+    }
+    glEnd();
+
+    glPopMatrix();
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    float stretch = 1.0f;
+    if (!goingUp && ballY < -0.75f)
+        stretch = 0.7f; // Squash
+    else if (goingUp && velocity > 0.015f)
+        stretch = 1.2f; // Stretch
+
+    drawBall(stretch);
+
+    glutSwapBuffers();
+}
+
+void timer(int) {
+    // Bounce physics
+    ballY += velocity;
+    velocity += gravity;
+
+    if (ballY <= -0.8f) {
+        ballY = -0.8f;
+        velocity = -velocity * bounceFactor;
+        goingUp = true;
+    }
+
+    if (velocity < 0)
+        goingUp = false;
+
+    glutPostRedisplay();
+    glutTimerFunc(16, timer, 0); // ~60 FPS
+}
+
+void init() {
+    glClearColor(1, 1, 1, 1);
+    gluOrtho2D(-1, 1, -1, 1);
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitWindowSize(500, 500);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutCreateWindow("Animated Bouncing Ball");
+
+    init();
+    glutDisplayFunc(display);
+    glutTimerFunc(0, timer, 0);
+    glutMainLoop();
+    return 0;
+}

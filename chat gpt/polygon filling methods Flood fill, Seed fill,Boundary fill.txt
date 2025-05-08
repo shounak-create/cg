@@ -1,0 +1,122 @@
+#include <GL/glut.h>
+#include <iostream>
+
+using namespace std;
+
+int fillMethod = 0; // 0 = none, 1 = flood fill, 2 = boundary fill
+int seedX = -1, seedY = -1;
+
+void setPixel(int x, int y, float r, float g, float b) {
+    glColor3f(r, g, b);
+    glBegin(GL_POINTS);
+    glVertex2i(x, y);
+    glEnd();
+    glFlush();
+}
+
+void getPixelColor(int x, int y, float* color) {
+    glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, color);
+}
+
+// Recursive Flood Fill
+void floodFill(int x, int y, float* oldColor, float* fillColor) {
+    float color[3];
+    getPixelColor(x, y, color);
+
+    if ((color[0] == oldColor[0] && color[1] == oldColor[1] && color[2] == oldColor[2])) {
+        setPixel(x, y, fillColor[0], fillColor[1], fillColor[2]);
+        floodFill(x + 1, y, oldColor, fillColor);
+        floodFill(x - 1, y, oldColor, fillColor);
+        floodFill(x, y + 1, oldColor, fillColor);
+        floodFill(x, y - 1, oldColor, fillColor);
+    }
+}
+
+// Recursive Boundary Fill
+void boundaryFill(int x, int y, float* fillColor, float* boundaryColor) {
+    float color[3];
+    getPixelColor(x, y, color);
+
+    if ((color[0] != boundaryColor[0] || color[1] != boundaryColor[1] || color[2] != boundaryColor[2]) &&
+        (color[0] != fillColor[0] || color[1] != fillColor[1] || color[2] != fillColor[2])) {
+        setPixel(x, y, fillColor[0], fillColor[1], fillColor[2]);
+        boundaryFill(x + 1, y, fillColor, boundaryColor);
+        boundaryFill(x - 1, y, fillColor, boundaryColor);
+        boundaryFill(x, y + 1, fillColor, boundaryColor);
+        boundaryFill(x, y - 1, fillColor, boundaryColor);
+    }
+}
+
+void mouse(int btn, int state, int x, int y) {
+    if (btn == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        seedX = x;
+        seedY = 500 - y;  // Invert Y because OpenGL origin is bottom-left
+
+        float oldColor[3] = {1, 1, 1};       // White (background)
+        float boundaryColor[3] = {1, 0, 0};  // Red
+        float fillColor[3] = {0, 1, 0};      // Green
+
+        if (fillMethod == 1) {
+            floodFill(seedX, seedY, oldColor, fillColor);
+        } else if (fillMethod == 2) {
+            boundaryFill(seedX, seedY, fillColor, boundaryColor);
+        }
+    }
+}
+
+void keyboard(unsigned char key, int x, int y) {
+    if (key == 'f') {
+        fillMethod = 1;
+    } else if (key == 'b') {
+        fillMethod = 2;
+    }
+}
+
+void menu(int option) {
+    fillMethod = option;
+}
+
+void createMenu() {
+    glutCreateMenu(menu);
+    glutAddMenuEntry("Flood Fill", 1);
+    glutAddMenuEntry("Boundary Fill", 2);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+
+void drawPolygon() {
+    glColor3f(1.0, 0.0, 0.0); // Red border
+    glBegin(GL_LINE_LOOP);
+    glVertex2i(200, 200);
+    glVertex2i(300, 250);
+    glVertex2i(350, 350);
+    glVertex2i(250, 400);
+    glVertex2i(150, 300);
+    glEnd();
+    glFlush();
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawPolygon();
+}
+
+void init() {
+    glClearColor(1.0, 1.0, 1.0, 1.0); // White background
+    gluOrtho2D(0, 500, 0, 500);       // 2D projection
+    glPointSize(1.0);
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(500, 500);
+    glutCreateWindow("Flood Fill and Boundary Fill");
+
+    init();
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse);
+    glutKeyboardFunc(keyboard);
+    createMenu();
+    glutMainLoop();
+    return 0;
+}

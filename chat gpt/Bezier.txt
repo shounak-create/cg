@@ -1,0 +1,75 @@
+Generate fractal patterns using i) Bezier
+#include <GL/glut.h>
+#include <cmath>
+#include <iostream>
+using namespace std;
+
+struct Point {
+    float x, y;
+};
+
+// Recursive Bezier function
+void drawBezier(Point p0, Point p1, Point p2, Point p3, int depth) {
+    if (depth == 0) {
+        glBegin(GL_LINE_STRIP);
+        for (float t = 0; t <= 1.0; t += 0.01) {
+            float x = pow(1 - t, 3) * p0.x +
+                      3 * t * pow(1 - t, 2) * p1.x +
+                      3 * pow(t, 2) * (1 - t) * p2.x +
+                      pow(t, 3) * p3.x;
+
+            float y = pow(1 - t, 3) * p0.y +
+                      3 * t * pow(1 - t, 2) * p1.y +
+                      3 * pow(t, 2) * (1 - t) * p2.y +
+                      pow(t, 3) * p3.y;
+
+            glVertex2f(x, y);
+        }
+        glEnd();
+        glFlush();
+        return;
+    }
+
+    // Split curve into 2 subcurves
+    Point a = {(p0.x + p1.x) / 2, (p0.y + p1.y) / 2};
+    Point b = {(p1.x + p2.x) / 2, (p1.y + p2.y) / 2};
+    Point c = {(p2.x + p3.x) / 2, (p2.y + p3.y) / 2};
+    Point d = {(a.x + b.x) / 2, (a.y + b.y) / 2};
+    Point e = {(b.x + c.x) / 2, (b.y + c.y) / 2};
+    Point f = {(d.x + e.x) / 2, (d.y + e.y) / 2};
+
+    drawBezier(p0, a, d, f, depth - 1);
+    drawBezier(f, e, c, p3, depth - 1);
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glColor3f(0.2f, 0.4f, 0.8f); // blue
+
+    Point p0 = {-0.8, -0.6};
+    Point p1 = {-0.3,  0.9};
+    Point p2 = { 0.3, -0.9};
+    Point p3 = { 0.8,  0.6};
+
+    drawBezier(p0, p1, p2, p3, 4); // depth = 4
+
+    glFlush();
+}
+
+void init() {
+    glClearColor(1, 1, 1, 1); // White background
+    gluOrtho2D(-1, 1, -1, 1); // Normalized coordinates
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitWindowSize(600, 600);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutCreateWindow("Bezier Fractal Pattern");
+
+    init();
+    glutDisplayFunc(display);
+    glutMainLoop();
+    return 0;
+}

@@ -1,0 +1,117 @@
+Implement Bresenham line drawing algorithm to draw: i) Simple Line ii) Dotted Line iii) Dashed Line iv) Solid line ;using mouse interface Divide the screen in four quadrants with center as (0, 0). The line should work for all the slopes positive as well as negative.
+
+#include <GL/glut.h>
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+int x1_click, y1_click, x2_click, y2_click;
+int clickCount = 0;
+int lineType = 1; // 1: Simple, 2: Dotted, 3: Dashed, 4: Solid
+
+void drawAxes() {
+    glColor3f(0.5, 0.5, 0.5); // gray
+    glBegin(GL_LINES);
+    glVertex2i(-500, 0);
+    glVertex2i(500, 0);
+    glVertex2i(0, -500);
+    glVertex2i(0, 500);
+    glEnd();
+    glFlush();
+}
+
+void plotPixel(int x, int y) {
+    glBegin(GL_POINTS);
+    glVertex2i(x, y);
+    glEnd();
+}
+
+void bresenhamLine(int x1, int y1, int x2, int y2, int type) {
+    int dx = abs(x2 - x1), dy = abs(y2 - y1);
+    int sx = x2 >= x1 ? 1 : -1;
+    int sy = y2 >= y1 ? 1 : -1;
+    int err = dx - dy;
+    int count = 0;
+
+    while (true) {
+        // Pattern based on type
+        bool draw = true;
+        if (type == 2) {             // Dotted
+            draw = (count % 4 == 0);
+        } else if (type == 3) {      // Dashed
+            draw = (count % 10 < 6);
+        } else if (type == 4) {      // Solid
+            draw = true;
+        }
+
+        if (draw) plotPixel(x1, y1);
+
+        if (x1 == x2 && y1 == y2) break;
+
+        int e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x1 += sx; }
+        if (e2 < dx) { err += dx; y1 += sy; }
+
+        count++;
+    }
+    glFlush();
+}
+
+void mouse(int button, int state, int x, int y) {
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        // Convert screen to OpenGL coordinates
+        int x_gl = x - 250;
+        int y_gl = 250 - y;
+
+        if (clickCount == 0) {
+            x1_click = x_gl;
+            y1_click = y_gl;
+            clickCount = 1;
+        } else {
+            x2_click = x_gl;
+            y2_click = y_gl;
+            clickCount = 0;
+
+            glColor3f(1, 0, 0); // red
+            bresenhamLine(x1_click, y1_click, x2_click, y2_click, lineType);
+        }
+    }
+}
+
+void menu(int value) {
+    lineType = value;
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawAxes();
+    glFlush();
+}
+
+void init() {
+    glClearColor(1, 1, 1, 1); // white background
+    gluOrtho2D(-250, 250, -250, 250); // centered at (0,0)
+    glPointSize(2.0);
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(500, 500);
+    glutCreateWindow("Bresenham Line Drawing - Mouse + Styles");
+
+    init();
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse);
+
+    // Create menu
+    glutCreateMenu(menu);
+    glutAddMenuEntry("Simple Line", 1);
+    glutAddMenuEntry("Dotted Line", 2);
+    glutAddMenuEntry("Dashed Line", 3);
+    glutAddMenuEntry("Solid Line", 4);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+    glutMainLoop();
+    return 0;
+}

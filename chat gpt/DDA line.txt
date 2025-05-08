@@ -1,0 +1,95 @@
+Implement DDA line drawing algorithm to draw: i) Simple Line ii) Dotted Line iii) Dashed Line iv) Solid line; using mouse interface Divide the screen in four quadrants with center as (0, 0). The line should work for all the slopes positive as well as negative.
+ 
+#include <iostream>
+#include <math.h>
+#include <GL/glut.h>
+
+int lineType = 0; // 0: Simple, 1: Dotted, 2: Dashed, 3: Solid
+int clickCount = 0;
+int x1, y1, x2, y2;
+
+void setPixel(int x, int y) {
+    glBegin(GL_POINTS);
+    glVertex2i(x, y);
+    glEnd();
+}
+
+void ddaLine(int x1, int y1, int x2, int y2, int type) {
+    int dx = x2 - x1;// dx (horizontal difference) measures the change in x-direction (left/right).
+    int dy = y2 - y1; //  dy (vertical difference) measures the change in y-direction (up/down).
+
+    int steps = abs(dx) > abs(dy) ? abs(dx) : abs(dy);
+    float xInc = dx / (float)steps;
+    float yInc = dy / (float)steps;
+
+    float x = x1, y = y1;
+    for (int i = 0; i <= steps; i++) {
+        switch (type) {
+            case 0: setPixel(round(x), round(y)); break; // Simple
+            case 1: if (i % 5 == 0) setPixel(round(x), round(y)); break; // Dotted
+            case 2: if ((i / 10) % 2 == 0) setPixel(round(x), round(y)); break; // Dashed
+            case 3: setPixel(round(x), round(y)); break; // Solid
+        }
+        x += xInc;
+        y += yInc;
+    }
+    glFlush();
+}
+
+void drawAxes() {
+    glColor3f(1.0, 1.0, 1.0);
+    ddaLine(-500, 0, 500, 0, 0); // X-axis
+    ddaLine(0, -500, 0, 500, 0); // Y-axis
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawAxes();
+
+    glColor3f(1.0, 0.0, 0.0); // Red line
+    ddaLine(x1, y1, x2, y2, lineType);
+
+    glFlush();
+}
+
+void mouse(int button, int state, int x, int y) {
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        if (clickCount == 0) {
+            x1 = x - 250;
+            y1 = 250 - y;
+            clickCount = 1;
+        } else {
+            x2 = x - 250;
+            y2 = 250 - y;
+            clickCount = 0;
+            glutPostRedisplay();
+        }
+    }
+}
+
+void keyboard(unsigned char key, int x, int y) {
+    if (key >= '0' && key <= '3') {
+        lineType = key - '0';
+        std::cout << "Line type set to: " << lineType << std::endl;
+    }
+}
+
+void init() {
+    glClearColor(0.0, 0.0, 0.0, 1.0); // Black background
+    gluOrtho2D(-250, 250, -250, 250); // 4 quadrants
+    glPointSize(2.0);
+}
+
+int main(int argc, char **argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(500, 500);
+    glutCreateWindow("DDA Line Drawing - All Styles");
+
+    init();
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse);
+    glutKeyboardFunc(keyboard);
+    glutMainLoop();
+    return 0;
+}
